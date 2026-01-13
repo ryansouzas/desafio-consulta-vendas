@@ -6,8 +6,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import com.devsuperior.dsmeta.dto.SaleSellerDTO;
 import com.devsuperior.dsmeta.dto.SellerSummaryDTO;
+import com.devsuperior.dsmeta.dto.projections.SaleSellerProjection;
+import com.devsuperior.dsmeta.dto.projections.SellerSummaryProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,20 +20,23 @@ import org.springframework.stereotype.Service;
 import com.devsuperior.dsmeta.dto.SaleMinDTO;
 import com.devsuperior.dsmeta.entities.Sale;
 import com.devsuperior.dsmeta.repositories.SaleRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SaleService {
 
 	@Autowired
 	private SaleRepository repository;
-	
-	public SaleMinDTO findById(Long id) {
+
+    @Transactional(readOnly = true)
+    public SaleMinDTO findById(Long id) {
 		Optional<Sale> result = repository.findById(id);
 		Sale entity = result.get();
 		return new SaleMinDTO(entity);
 	}
 
-    public Page<SaleMinDTO> findSales(String minDate, String maxDate, String sellerName, Pageable pageable){
+    @Transactional(readOnly = true)
+    public Page<SaleSellerDTO> searchSales(String minDate, String maxDate, String sellerName, Pageable pageable){
 
         LocalDate finalDate;
         if(maxDate == null) {
@@ -47,12 +54,11 @@ public class SaleService {
             initialDate = LocalDate.parse(minDate);
         }
 
-        if(sellerName == null){
-            sellerName = "";
-        }
+        sellerName = (sellerName == null) ? "" : sellerName;
 
-        Page<Sale> page = repository.searchSales(initialDate, finalDate, sellerName, pageable);
-        return page.map(SaleMinDTO::new);
+        Page<SaleSellerProjection> page = repository.searchSales(initialDate, finalDate, sellerName, pageable);
+
+        return page.map(p -> new SaleSellerDTO(p.getId(), p.getDate(), p.getAmount(), p.getSellerName()));
     }
 
     public List<SellerSummaryDTO> getSalesSummaryBySeller(String minDate, String maxDate){
@@ -73,6 +79,7 @@ public class SaleService {
             initialDate = LocalDate.parse(minDate);
         }
 
-        return repository.summaryBySeller(initialDate, finalDate);
+        List<SellerSummaryProjection> result = repository.summaryBySeller(initialDate, finalDate);
+        return result.stream().map(r -> new SellerSummaryDTO(r.getSellerName(), r.getTotal())).collect(Collectors.toList());
     }
 }
