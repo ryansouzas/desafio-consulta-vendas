@@ -26,9 +26,9 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             " AND LOWER(sel.name) " +
             " LIKE LOWER(CONCAT('%', :sellerName, '%'))")
     Page<SaleSellerProjection> searchSales(
-            LocalDate minDate,
-            LocalDate maxDate,
-            String sellerName,
+            @Param("minDate") LocalDate minDate,
+            @Param("maxDate") LocalDate maxDate,
+            @Param("sellerName") String sellerName,
             Pageable pageable);
 
 

@@ -56,7 +56,7 @@ public class SaleService {
 
         sellerName = (sellerName == null) ? "" : sellerName;
 
-        Page<SaleSellerProjection> page = repository.searchSales(initialDate, finalDate, sellerName, pageable);
+        Page<SaleSellerProjection> page = repository.searchSales(initialDate, finalDate, sellerName , pageable);
 
         return page.map(p -> new SaleSellerDTO(p.getId(), p.getDate(), p.getAmount(), p.getSellerName()));
     }
